@@ -1,5 +1,5 @@
 
-# CI/CD Learning project...
+# CI/CD Learning project..
 
 A simple full-stack web application developed as part of a CI/CD learning project. The application demonstrates how a frontend, backend, and database can work together using Docker containers. It also serves as a foundation for learning Docker Hub, GitHub Actions, Continuous Integration, and Continuous Deployment.
 
