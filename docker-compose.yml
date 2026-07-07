@@ -1,0 +1,73 @@
+services:
+  # Frontend: Nginx Reverse Proxy
+  frontend:
+    image: barch2002/cicd-learning-frontend:latest
+    container_name: frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Backend: Flask API
+  backend:
+    image: barch2002/cicd-learning-backend:latest
+    container_name: backend
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: development
+      INSTANCE: "1"
+    volumes:
+      - backend_data:/data
+    depends_on:
+      - database
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Database: PostgreSQL
+  database:
+    image: postgres:15-alpine
+    container_name: database
+    environment:
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: secure_password_123
+      POSTGRES_DB: app_database
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d app_database"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# Named volumes (persist data across container restarts)
+volumes:
+  backend_data:
+    driver: local
+  database_data:
+    driver: local
+
+# Network (internal communication)
+networks:
+  app_network:
+    driver: bridge

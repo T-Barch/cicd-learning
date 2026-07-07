@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, height=device_height">
+    <title>CI/CD Learning App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 80vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgb(255, 255, 255);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #667;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .status-box {
+            background: #f0f0f0;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .status-box h2 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .status-box p {
+            color: #555;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .form-section input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            transition: border-color 0.3s;
+        }
+
+        .form-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-section button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .form-section button:hover {
+            transform: translateY(-2px);
+        }
+
+        .items-section h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f9f9f9;
+            border-left: 4px solid #764ba2;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .item:hover {
+            background: #f0f0f0;
+        }
+
+        .item-name {
+            flex: 1;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .item-id {
+            color: #999;
+            font-size: 12px;
+            margin: 0 10px;
+        }
+
+        .delete-btn {
+            padding: 6px 12px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .delete-btn:hover {
+            background: #ff5252;
+        }
+
+        .empty {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .error {
+            color: #ff6b6b;
+            padding: 10px;
+            background: #ffe0e0;
+            border-radius: 5px;
+        }
+
+        .info-box {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f0f8ff;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+        }
+
+        .info-box h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            color: #555;
+            font-size: 13px;
+        }
+
+        .info-box li {
+            padding: 5px 0;
+        }
+
+        .info-box li:before {
+            content: "→ ";
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1> Docker CI/CD Demo </h1>
+        <div class="status-box">
+            <h2>Backend Status</h2>
+            <p id="status">Checking...</p>
+        </div>
+
+        <div class="form-section">
+            <input type="text" id="itemInput" placeholder="Enter item name" />
+            <button onclick="addItem()">Add Item</button>
+        </div>
+
+        <div class="items-section">
+            <h2>Items List</h2>
+            <div id="itemsList" class="items-list">
+                Loading items...
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>What you're seeing:</h3>
+            <ul>
+                <li>Frontend: Nginx serving this HTML</li>
+                <li>Backend: Flask API running in container</li>
+                <li>Database: PostgreSQL storing items</li>
+                <li>Network: All connected via Docker bridge network</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Use relative paths to call API through Nginx proxy
+        const API_URL = '/api';
+
+        // Check backend health
+        async function checkHealth() {
+            try {
+                // Call through Nginx proxy (relative path)
+                const response = await fetch('/api/items');
+                if (response.ok) {
+                    document.getElementById('status').innerHTML = 
+                        `✅ Backend is healthy`;
+                } else {
+                    document.getElementById('status').innerHTML = 
+                        `⚠️ Backend responded but got error: ${response.status}`;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    `❌ Backend is not responding<br/>${error.message}`;
+            }
+        }
+
+        // Load items
+        async function loadItems() {
+            try {
+                // Call through Nginx proxy (relative path)
+                const response = await fetch(`${API_URL}/items`);
+                const data = await response.json();
+                
+                if (data.items.length === 0) {
+                    document.getElementById('itemsList').innerHTML = 
+                        '<p class="empty">No items yet. Add one above!</p>';
+                    return;
+                }
+
+                const html = data.items.map(item => `
+                    <div class="item">
+                        <span class="item-name">${item.name}</span>
+                        <span class="item-id">${item.id}</span>
+                        <button class="delete-btn" onclick="deleteItem(${item.id})">Delete</button>
+                    </div>
+                `).join('');
+                
+                document.getElementById('itemsList').innerHTML = html;
+            } catch (error) {
+                document.getElementById('itemsList').innerHTML = 
+                    `<p class="error">Error loading items: ${error.message}</p>`;
+            }
+        }
+
+        // Add item
+        async function addItem() {
+            const input = document.getElementById('itemInput');
+            const name = input.value.trim();
+            
+            if (!name) {
+                alert('Please enter an item name');
+                return;
+            }
+
+            try {
+                // Call through Nginx proxy (relative path)
+                const response = await fetch(`${API_URL}/items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+
+                if (response.ok) {
+                    input.value = '';
+                    loadItems();
+                } else {
+                    alert('Error adding item');
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Delete item
+        async function deleteItem(id) {
+            if (!confirm('Delete this item?')) return;
+
+            try {
+                // Call through Nginx proxy (relative path)
+                const response = await fetch(`${API_URL}/items/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadItems();
+                } else {
+                    alert('Error deleting item');
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Initial load
+        checkHealth();
+        loadItems();
+
+        // Refresh every 5 seconds
+        setInterval(() => {
+            checkHealth();
+            loadItems();
+        }, 5000);
+    </script>
+</body>
+</html>
