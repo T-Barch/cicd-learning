@@ -9,11 +9,21 @@ import os
 
 app = Flask(__name__)
 
-DB_USER = os.getenv("POSTGRES_USER", "app_user")
-DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "secure_password_123")
-DB_NAME = os.getenv("POSTGRES_DB", "app_database")
+# Fetch credentials strictly from environment with ZERO hardcoded fallbacks
+DB_USER = os.getenv("POSTGRES_USER")
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+DB_NAME = os.getenv("POSTGRES_DB")
+
+# Network defaults are safe to have fallbacks as they are not secrets
 DB_HOST = os.getenv("DB_HOST", "database")
 DB_PORT = os.getenv("DB_PORT", "5432")
+
+# Fail-fast check to catch configuration errors immediately at startup
+if not all([DB_USER, DB_PASSWORD, DB_NAME]):
+    raise ValueError(
+        "Database credentials (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB) "
+        "must be fully configured in the environment!"
+    )
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
@@ -21,6 +31,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
 
 class Item(db.Model):
     __tablename__ = "items"
@@ -36,6 +47,7 @@ class Item(db.Model):
             "created_at": self.created_at.isoformat()
         }
 
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
@@ -45,15 +57,16 @@ def health():
         "instance": os.getenv("INSTANCE", "default")
     })
 
+
 @app.route('/api/items', methods=['GET'])
 def get_items():
     items = Item.query.all()
-
     return jsonify({
         "success": True,
         "items": [item.to_dict() for item in items],
         "count": len(items)
     })
+
 
 @app.route('/api/items', methods=['POST'])
 def create_item():
@@ -75,11 +88,11 @@ def create_item():
         }), 201
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
+
 @app.route('/api/items/<int:item_id>', methods=['GET'])
 def get_item(item_id):
     """Get specific item"""
-
     item = Item.query.get(item_id)
 
     if not item:
@@ -93,10 +106,10 @@ def get_item(item_id):
         "item": item.to_dict()
     })
 
+
 @app.route('/api/items/<int:item_id>', methods=['DELETE'])
 def delete_item(item_id):
     """Delete item"""
-
     item = Item.query.get(item_id)
 
     if not item:
@@ -113,16 +126,16 @@ def delete_item(item_id):
         "message": "Item deleted"
     })
 
+
 @app.route('/metrics', methods=['GET'])
 def metrics():
     """Prometheus metrics endpoint (simple version)"""
-
     items_count = Item.query.count()
-
     return f"""# HELP items_total Total number of items
 # TYPE items_total gauge
 items_total {items_count}
 """
+
 
 if __name__ == '__main__':
     with app.app_context():
