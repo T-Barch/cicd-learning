@@ -1,0 +1,32 @@
+# Application Secrets
+.env
+.env.*
+
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python Cache & Testing
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+
+# Build artifacts & logs
+*.log
