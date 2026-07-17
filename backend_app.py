@@ -132,7 +132,7 @@ def create_item():
 @app.route("/api/items/<int:item_id>", methods=["GET"])
 def get_item(item_id):
     """Return a specific item."""
-    item = Item.query.get(item_id)
+    item = db.session.get(Item, item_id)
 
     if item is None:
         return jsonify(
@@ -153,7 +153,7 @@ def get_item(item_id):
 @app.route("/api/items/<int:item_id>", methods=["DELETE"])
 def delete_item(item_id):
     """Delete a specific item."""
-    item = Item.query.get(item_id)
+    item = db.session.get(Item, item_id)
 
     if item is None:
         return jsonify(
@@ -194,5 +194,4 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=port,
-        debug=True,
     )
