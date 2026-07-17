@@ -1,5 +1,9 @@
 """
+<<<<<<< HEAD
 Simple Flask API for CI/CD Learning.
+=======
+Simple Flask API for CI/CD Learning
+>>>>>>> latest_branch
 Usage: python backend_app.py
 """
 
@@ -10,10 +14,15 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 
+<<<<<<< HEAD
+=======
+# Load environment variables from .env
+>>>>>>> latest_branch
 load_dotenv()
 
 app = Flask(__name__)
 
+<<<<<<< HEAD
 database_url = os.getenv("DATABASE_URL")
 
 if database_url:
@@ -43,13 +52,40 @@ else:
     )
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+=======
+# Fetch credentials from environment
+DB_USER = os.getenv("POSTGRES_USER")
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+DB_NAME = os.getenv("POSTGRES_DB")
+
+# Network defaults (not secrets)
+DB_HOST = os.getenv("DB_HOST", "database")
+DB_PORT = os.getenv("DB_PORT", "5432")
+
+# Fail fast if required database credentials are missing
+if not all([DB_USER, DB_PASSWORD, DB_NAME]):
+    raise ValueError(
+        "Database credentials (POSTGRES_USER, "
+        "POSTGRES_PASSWORD, POSTGRES_DB) "
+        "must be fully configured in the environment!"
+    )
+
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    f"postgresql://{DB_USER}:{DB_PASSWORD}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
+>>>>>>> latest_branch
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
 
 class Item(db.Model):
+<<<<<<< HEAD
     """Database model."""
+=======
+    """Database model for items."""
+>>>>>>> latest_branch
 
     __tablename__ = "items"
 
@@ -58,7 +94,11 @@ class Item(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
+<<<<<<< HEAD
         """Convert item to dictionary."""
+=======
+        """Convert model to dictionary."""
+>>>>>>> latest_branch
         return {
             "id": self.id,
             "name": self.name,
@@ -111,6 +151,7 @@ def create_item():
         db.session.add(new_item)
         db.session.commit()
 
+<<<<<<< HEAD
         return jsonify(
             {
                 "success": True,
@@ -127,11 +168,34 @@ def create_item():
                 "error": str(exc),
             }
         ), 500
+=======
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "item": new_item.to_dict(),
+                }
+            ),
+            201,
+        )
+
+    except Exception as exc:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": str(exc),
+                }
+            ),
+            500,
+        )
+>>>>>>> latest_branch
 
 
 @app.route("/api/items/<int:item_id>", methods=["GET"])
 def get_item(item_id):
     """Return a specific item."""
+<<<<<<< HEAD
     item = db.session.get(Item, item_id)
 
     if item is None:
@@ -141,6 +205,20 @@ def get_item(item_id):
                 "error": "Item not found",
             }
         ), 404
+=======
+    item = Item.query.get(item_id)
+
+    if not item:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Item not found",
+                }
+            ),
+            404,
+        )
+>>>>>>> latest_branch
 
     return jsonify(
         {
@@ -153,6 +231,7 @@ def get_item(item_id):
 @app.route("/api/items/<int:item_id>", methods=["DELETE"])
 def delete_item(item_id):
     """Delete a specific item."""
+<<<<<<< HEAD
     item = db.session.get(Item, item_id)
 
     if item is None:
@@ -162,6 +241,20 @@ def delete_item(item_id):
                 "error": "Item not found",
             }
         ), 404
+=======
+    item = Item.query.get(item_id)
+
+    if not item:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Item not found",
+                }
+            ),
+            404,
+        )
+>>>>>>> latest_branch
 
     db.session.delete(item)
     db.session.commit()
@@ -190,8 +283,12 @@ if __name__ == "__main__":
         db.create_all()
 
     port = int(os.getenv("PORT", "5000"))
+<<<<<<< HEAD
 
     app.run(
         host="0.0.0.0",
         port=port,
     )
+=======
+    app.run(host="0.0.0.0", port=port, debug=True)
+>>>>>>> latest_branch
