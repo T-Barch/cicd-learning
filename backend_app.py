@@ -79,7 +79,7 @@ def health():
             "timestamp": datetime.utcnow().isoformat(),
             "instance": os.getenv("INSTANCE", "default"),
         }
-    )
+    ), 200
 
 
 @app.route("/api/items", methods=["GET"])
@@ -93,7 +93,7 @@ def get_items():
             "items": [item.to_dict() for item in items],
             "count": len(items),
         }
-    )
+    ), 200
 
 
 @app.route("/api/items", methods=["POST"])
@@ -115,26 +115,10 @@ def create_item():
         db.session.add(new_item)
         db.session.commit()
 
-        return (
-            jsonify(
-                {
-                    "success": True,
-                    "item": new_item.to_dict(),
-                }
-            ),
-            201,
-        )
+        return jsonify({"success": True, "item": new_item.to_dict()}), 201
 
     except Exception as exc:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": str(exc),
-                }
-            ),
-            500,
-        )
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @app.route("/api/items/<int:item_id>", methods=["GET"])
@@ -143,22 +127,9 @@ def get_item(item_id):
     item = Item.query.get(item_id)
 
     if not item:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "Item not found",
-                }
-            ),
-            404,
-        )
+        return jsonify({"success": False, "error": "Item not found"}), 404
 
-    return jsonify(
-        {
-            "success": True,
-            "item": item.to_dict(),
-        }
-    )
+    return jsonify({"success": True, "item": item.to_dict()}), 200
 
 
 @app.route("/api/items/<int:item_id>", methods=["DELETE"])
@@ -167,25 +138,12 @@ def delete_item(item_id):
     item = Item.query.get(item_id)
 
     if not item:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "Item not found",
-                }
-            ),
-            404,
-        )
+        return jsonify({"success": False, "error": "Item not found"}), 404
 
     db.session.delete(item)
     db.session.commit()
 
-    return jsonify(
-        {
-            "success": True,
-            "message": "Item deleted",
-        }
-    )
+    return jsonify({"success": True, "message": "Item deleted"}), 200
 
 
 @app.route("/metrics", methods=["GET"])
