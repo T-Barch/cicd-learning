@@ -19,7 +19,7 @@ EXPOSE 8080
 
 # Health check matching Gunicorn's port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health')" || exit 1
 
-# Run app using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "backend_app:app"]
+# Run app using Gunicorn bound to BOTH IPv4 (0.0.0.0) and IPv6 ([::])
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--bind", "[::]:8080", "--workers", "2", "backend_app:app"]
