@@ -10,19 +10,19 @@ on:
 
 jobs:
   build-test-push:
+    name: Lint, Test & Publish
     runs-on: ubuntu-latest
 
     # Spin up a PostgreSQL service container for integration tests
     services:
       postgres:
-        image: postgres:15
+        image: postgres:15-alpine
         env:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
           POSTGRES_DB: test_db
         ports:
           - 5432:5432
-        # Ensure Postgres is healthy before moving on to steps
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -44,8 +44,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Tests
-        # Inject the exact credentials Flask expects to find
+      - name: Lint with Flake8
+        run: |
+          # Stop build on syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Treat formatting/style warnings cleanly without failing build prematurely
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Run Tests with Pytest
         env:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
@@ -53,18 +59,21 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 5432
         run: |
-          python -m pytest -v
+          pytest -v --cov=.
 
       - name: Set up Docker Buildx
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push Backend Image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -75,6 +84,7 @@ jobs:
             barch2002/cicd-learning-backend:${{ github.sha }}
 
       - name: Build and Push Frontend Image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: .

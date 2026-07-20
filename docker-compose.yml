@@ -1,5 +1,9 @@
 services:
+  # Frontend: Nginx Reverse Proxy
   frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     image: barch2002/cicd-learning-frontend:latest
     container_name: frontend
     ports:
@@ -7,20 +11,19 @@ services:
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app_network
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "cat /dev/null > /dev/tcp/127.0.0.1/80 || exit 1",
-        ]
+      # Native shell check that works in virtually all environments (including minimal nginx)
+      test: ["CMD-SHELL", "cat /dev/null > /dev/tcp/127.0.0.1/80 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
 
+  # Backend: Flask API
   backend:
     build:
       context: .
@@ -28,34 +31,34 @@ services:
     image: barch2002/cicd-learning-backend:latest
     container_name: backend
     ports:
-      - "5000:8080"
+      - "8080:8080"
     environment:
-      FLASK_ENV: development
+      FLASK_ENV: production
       INSTANCE: "1"
+      # Dynamically injected from your local hidden .env file
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - backend_data:/data
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     networks:
       - app_network
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/health')\" || exit 1",
-        ]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/health')\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
 
+  # Database: PostgreSQL
   database:
     image: postgres:15-alpine
     container_name: database
     environment:
+      # Dynamically injected from your local hidden .env file
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -66,21 +69,20 @@ services:
     networks:
       - app_network
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
-        ]
-      interval: 10s
+      # Dynamically uses the variables so healthcheck doesn't fail if you change them
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
       timeout: 5s
       retries: 5
 
+# Named volumes (persist data across container restarts)
 volumes:
   backend_data:
     driver: local
   database_data:
     driver: local
 
+# Network (internal communication)
 networks:
   app_network:
     driver: bridge

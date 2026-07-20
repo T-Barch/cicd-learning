@@ -1,12 +1,46 @@
 FROM nginx:alpine
 
-# Remove the default Nginx configuration
+# Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy the custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Create nginx config inline to avoid line ending issues
+RUN echo 'events { worker_connections 1024; } \
+http { \
+    upstream backend { \
+        server backend:8080; \
+    } \
+    server { \
+        listen 80; \
+        server_name localhost; \
+        client_max_body_size 10M; \
+        location / { \
+            root /usr/share/nginx/html; \
+            try_files $uri $uri/ @backend; \
+            expires 1d; \
+            add_header Cache-Control "public, immutable"; \
+        } \
+        location @backend { \
+            proxy_pass http://backend; \
+            proxy_set_header Host $host; \
+            proxy_set_header X-Real-IP $remote_addr; \
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+            proxy_set_header X-Forwarded-Proto $scheme; \
+        } \
+        location /api/ { \
+            proxy_pass http://backend; \
+            proxy_set_header Host $host; \
+            proxy_set_header X-Real-IP $remote_addr; \
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+            proxy_set_header X-Forwarded-Proto $scheme; \
+        } \
+        location /health { \
+            proxy_pass http://backend; \
+            proxy_set_header Host $host; \
+        } \
+    } \
+}' > /etc/nginx/nginx.conf
 
-# Copy frontend files
+# COPY YOUR STATIC FILES INTO THE IMAGE
 COPY frontend/ /usr/share/nginx/html/
 
 EXPOSE 80

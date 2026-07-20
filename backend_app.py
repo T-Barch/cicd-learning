@@ -1,9 +1,5 @@
 """
-<<<<<<< HEAD
-Simple Flask API for CI/CD Learning.
-=======
 Simple Flask API for CI/CD Learning
->>>>>>> latest_branch
 Usage: python backend_app.py
 """
 
@@ -13,46 +9,13 @@ from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 
-<<<<<<< HEAD
-=======
 # Load environment variables from .env
->>>>>>> latest_branch
 load_dotenv()
 
 app = Flask(__name__)
 
-<<<<<<< HEAD
-database_url = os.getenv("DATABASE_URL")
-
-if database_url:
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace(
-            "postgres://",
-            "postgresql://",
-            1,
-        )
-else:
-    db_user = os.getenv("POSTGRES_USER")
-    db_password = os.getenv("POSTGRES_PASSWORD")
-    db_name = os.getenv("POSTGRES_DB")
-    db_host = os.getenv("DB_HOST", "database")
-    db_port = os.getenv("DB_PORT", "5432")
-
-    if not all([db_user, db_password, db_name]):
-        raise ValueError(
-            "DATABASE_URL or "
-            "(POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB) "
-            "must be configured."
-        )
-
-    database_url = (
-        f"postgresql://{db_user}:{db_password}"
-        f"@{db_host}:{db_port}/{db_name}"
-    )
-
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-=======
 # Fetch credentials from environment
 DB_USER = os.getenv("POSTGRES_USER")
 DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
@@ -74,18 +37,13 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
     f"postgresql://{DB_USER}:{DB_PASSWORD}"
     f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
->>>>>>> latest_branch
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
 
 class Item(db.Model):
-<<<<<<< HEAD
-    """Database model."""
-=======
     """Database model for items."""
->>>>>>> latest_branch
 
     __tablename__ = "items"
 
@@ -94,16 +52,22 @@ class Item(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
-<<<<<<< HEAD
-        """Convert item to dictionary."""
-=======
         """Convert model to dictionary."""
->>>>>>> latest_branch
         return {
             "id": self.id,
             "name": self.name,
             "created_at": self.created_at.isoformat(),
         }
+
+
+# CRITICAL FIX: Ensure tables are created safely when Gunicorn initializes multiple workers
+with app.app_context():
+    try:
+        db.create_all()
+        print("Database tables initialized successfully!")
+    except (ProgrammingError, OperationalError, IntegrityError) as e:
+        # Ignore duplicate table/type errors from concurrent Gunicorn workers
+        print("Tables already created or being created by another worker.")
 
 
 @app.route("/health", methods=["GET"])
@@ -151,24 +115,6 @@ def create_item():
         db.session.add(new_item)
         db.session.commit()
 
-<<<<<<< HEAD
-        return jsonify(
-            {
-                "success": True,
-                "item": new_item.to_dict(),
-            }
-        ), 201
-
-    except Exception as exc:
-        db.session.rollback()
-
-        return jsonify(
-            {
-                "success": False,
-                "error": str(exc),
-            }
-        ), 500
-=======
         return (
             jsonify(
                 {
@@ -189,23 +135,11 @@ def create_item():
             ),
             500,
         )
->>>>>>> latest_branch
 
 
 @app.route("/api/items/<int:item_id>", methods=["GET"])
 def get_item(item_id):
     """Return a specific item."""
-<<<<<<< HEAD
-    item = db.session.get(Item, item_id)
-
-    if item is None:
-        return jsonify(
-            {
-                "success": False,
-                "error": "Item not found",
-            }
-        ), 404
-=======
     item = Item.query.get(item_id)
 
     if not item:
@@ -218,7 +152,6 @@ def get_item(item_id):
             ),
             404,
         )
->>>>>>> latest_branch
 
     return jsonify(
         {
@@ -231,17 +164,6 @@ def get_item(item_id):
 @app.route("/api/items/<int:item_id>", methods=["DELETE"])
 def delete_item(item_id):
     """Delete a specific item."""
-<<<<<<< HEAD
-    item = db.session.get(Item, item_id)
-
-    if item is None:
-        return jsonify(
-            {
-                "success": False,
-                "error": "Item not found",
-            }
-        ), 404
-=======
     item = Item.query.get(item_id)
 
     if not item:
@@ -254,7 +176,6 @@ def delete_item(item_id):
             ),
             404,
         )
->>>>>>> latest_branch
 
     db.session.delete(item)
     db.session.commit()
@@ -278,17 +199,7 @@ items_total {items_count}
 """
 
 
+# This block is only used if running locally with `python backend_app.py`
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-
     port = int(os.getenv("PORT", "5000"))
-<<<<<<< HEAD
-
-    app.run(
-        host="0.0.0.0",
-        port=port,
-    )
-=======
     app.run(host="0.0.0.0", port=port, debug=True)
->>>>>>> latest_branch

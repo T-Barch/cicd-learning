@@ -8,20 +8,18 @@ docker-compose.yml
 docker-compose-*.yml
 Dockerfile.nginx
 .dockerignore
-Dockerfile
 
 # Documentation
 README.md
 *.md
 
-# IDE/Editor & Secrets
+# IDE/Editor files
 .vscode
 .idea
 *.swp
 *.swo
 *~
 .DS_Store
-.env
 .env.local
 
 # Python

@@ -3,7 +3,6 @@ Werkzeug==2.3.0
 
 SQLAlchemy==2.0.20
 Flask-SQLAlchemy==3.0.5
-<<<<<<< HEAD
 psycopg2-binary==2.9.10
 
 python-dotenv==1.0.1
@@ -13,11 +12,3 @@ pytest-cov==4.1.0
 flake8==7.1.1
 
 gunicorn==23.0.0
-=======
-psycopg2-binary==2.9.7
-
-pytest==7.4.0
-pytest-cov==4.1.0
-flake8==7.0.0
-python-dotenv==1.0.1
->>>>>>> latest_branch

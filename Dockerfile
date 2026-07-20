@@ -2,24 +2,24 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy requirements first
+# Copy requirements first (for better caching)
 COPY requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
+# Copy application code
 COPY backend_app.py .
 
 # Create data directory
 RUN mkdir -p /data
 
-# Expose application port
+# Expose port (Gunicorn default for Railway)
 EXPOSE 8080
 
-# Health check
+# Health check matching Gunicorn's port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
-# Run application with Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "backend_app:app"]
+# Run app using Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "backend_app:app"]
