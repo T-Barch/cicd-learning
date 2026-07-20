@@ -58,6 +58,7 @@ jobs:
           POSTGRES_DB: test_db
           DB_HOST: localhost
           DB_PORT: 5432
+          PYTHONPATH: .
         run: |
           pytest -v --cov=.
 
