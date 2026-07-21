@@ -45,7 +45,9 @@ services:
       database:
         condition: service_healthy
     networks:
-      - app_network
+      app_network:
+        aliases:
+          - cicd-learning.railway.internal
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/health')\" || exit 1"]
       interval: 30s
